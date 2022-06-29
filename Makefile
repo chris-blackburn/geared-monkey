@@ -1,16 +1,36 @@
+TARGET := geared-monkey.wasm
+SRC := src
+INC := include
+SRCS := $(shell find $(SRC) -type f -name "*.c")
+OBJS := $(patsubst %.c,%.wo,$(SRCS))
+
 CC := clang
-CFLAGS := -std=c99 -pedantic -nostdlib -fno-builtin -Wall -Werror -Os --target=wasm32
-LDFLAGS := -Wl,--no-entry -Wl,--export-all
+LD := wasm-ld
+CFLAGS := --target=wasm32 \
+		  -std=c99 \
+		  -pedantic \
+		  -nostdlib \
+		  -nostdinc \
+		  -fno-builtin \
+		  -fvisibility=hidden \
+		  -Wall \
+		  -Werror \
+		  -Os \
+		  -I$(INC)
+LDFLAGS := --no-entry --lto-O3
 
-TARGET := test.wasm
-SRCS := test.c
-OBJS := $(patsubst %.c,%.o,$(SRCS))
+.PHONY: all
+all:: $(TARGET)
 
-%.o: %.c
+%.wo: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(TARGET): $(OBJS)
-	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
+	$(LD) -o $@ $^ $(LDFLAGS)
+
+.PHONY: serve
+serve:
+	python3 -m http.server
 
 .PHONY: clean
 clean:
