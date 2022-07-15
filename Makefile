@@ -1,13 +1,14 @@
-TARGET := geared-monkey.wasm
+TARGET := tabitha.wasm
 SRC := src
 INC := include
 SRCS := $(shell find $(SRC) -type f -name "*.c")
 OBJS := $(patsubst %.c,%.wo,$(SRCS))
+DEPS := $(patsubst %.c,%.d,$(SRCS))
 
 CC := clang
 LD := wasm-ld
 CFLAGS := --target=wasm32 \
-		  -std=c99 \
+		  -std=c11 \
 		  -pedantic \
 		  -nostdlib \
 		  -nostdinc \
@@ -17,13 +18,15 @@ CFLAGS := --target=wasm32 \
 		  -Werror \
 		  -Os \
 		  -I$(INC)
-LDFLAGS := --no-entry --lto-O3
+LDFLAGS := --no-entry --export-dynamic --allow-undefined --lto-O3
 
 .PHONY: all
 all:: $(TARGET)
 
+-include $(DEPS)
+
 %.wo: %.c
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS) -MMD -MP
 
 $(TARGET): $(OBJS)
 	$(LD) -o $@ $^ $(LDFLAGS)
@@ -36,3 +39,4 @@ serve:
 clean:
 	rm -rf $(TARGET)
 	rm -rf $(OBJS)
+	rm -rf $(DEPS)
